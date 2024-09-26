@@ -107,4 +107,10 @@
     githubId = 6452260;
     name = "Andrew Plaza";
   };
+  wadsaek = {
+    email = "wadsaek@gmail.com";
+    github = "wadsaek";
+    githubId = 141351086;
+    name = "Esther";
+  };
 }
