@@ -1,10 +1,10 @@
 {
   empty = {
-    plugins.lsp_signature.enable = true;
+    plugins.lsp-signature.enable = true;
   };
 
   example = {
-    plugins.lsp_signature = {
+    plugins.lsp-signature = {
       enable = true;
 
       settings = {
