@@ -183,7 +183,8 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
       imap, use nvim_set_current_win to move cursor between current window and floating window. Once moved to floating window, you can use <M-d>, <M-u> to move cursor up and down.
     '';
 
-    keymaps = defaultNullOpts.mkListOf lib.types.anything { } ''
+    # TODO: figure out the types
+    keymaps = defaultNullOpts.mkListOf lib.types.anything [ ] ''
       related to move_cursor_key. the keymaps inside floating window with arguements of bufnr. 
       It can be a function that sets keymaps.
       <M-d> and <M-u> are default keymaps for moving the cursor up and down.
