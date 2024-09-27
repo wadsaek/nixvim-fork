@@ -22,6 +22,8 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
         ''
         ''
           Log directory when debug is on. Default is  ~/.cache/nvim/lsp_signature.log
+
+          Note: if you specify this as a nix path, make sure it points to an existing file
         '';
 
     verbose = defaultNullOpts.mkBool false ''
