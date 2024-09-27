@@ -21,33 +21,33 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
           vim.fn.stdpath("cache") .. "/lsp_signature.log"
         ''
         ''
-          Log directory when debug is on. Default is  ~/.cache/nvim/lsp_signature.log
+          Log directory for when debug is on. Default is  ~/.cache/nvim/lsp_signature.log
 
           Note: if you specify this as a nix path, make sure it points to an existing file
         '';
 
     verbose = defaultNullOpts.mkBool false ''
-      Whether to show debug line number
+      Whether to show the debug line number
     '';
 
     bind = defaultNullOpts.mkBool true ''
       This is mandatory, otherwise border config won't get registered.
-      If you want to hook lspsaga or other signature handler, pls set to false
+      If you want to hook lspsaga or other signature handler, please set to false
     '';
 
     doc_lines = defaultNullOpts.mkUnsignedInt 10 ''
-      Will show two lines of comment/doc(if there are more than teo lines in doc, will be truncated)
+      Will show two lines of comment/doc(if there are more than two lines in the doc, will be truncated)
 
       Set to zero if you DO NOT want any API comments be shown
-      This setting only take effect in insert mode, it does not affect  signature help in nornal mode
+      This setting only take effect in insert mode, it does not affect signature help in nornal mode
     '';
 
     max_height = defaultNullOpts.mkUnsignedInt 12 ''
-      Maximum height of signature floating_window
+      Maximum height of the signature floating_window
     '';
 
     max_width = defaultNullOpts.mkPositiveInt 80 ''
-      Maximum height of signature floating_window, line will be wrapped if exceed max_width
+      Maximum height of the signature floating_window, line will be wrapped if it exceeds max_width
     '';
 
     wrap = defaultNullOpts.mkBool true ''
@@ -59,7 +59,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     floating_window_above_cur_line = defaultNullOpts.mkBool true ''
-      Whether to try to place the floating above the current line when possible
+      Whether to try to place the floating window above the current line when possible
 
       Note:
         Will set to true when fully tested, set to false will use whichever side has more space
@@ -67,21 +67,21 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     floating_window_off_x = defaultNullOpts.mkStrLuaFnOr lib.types.int 1 ''
-      Adjust float windows x position. e.g: 
+      Adjust the floating window's x position 
     '';
 
     floating_window_off_y = defaultNullOpts.mkStrLuaFnOr lib.types.int 0 ''
-      Adjust float windows y position. e.g: 
+      Adjust the floating window's y positin. e.g: 
       - `-2` move window up 2 lines
       - `2` move down 2 lines
     '';
 
     close_timeout = defaultNullOpts.mkUnsignedInt 4000 ''
-      close floating window after ms when laster parameter is entered
+      Close the floating window after ms when last parameter is entered
     '';
 
     fix_pos = defaultNullOpts.mkBool false ''
-      If set to true, the floating window will not auto-close until finish all parameters
+      If set to true, the floating window will not auto-close until all parameters are entered
     '';
 
     hint_enable = defaultNullOpts.mkBool true ''
@@ -92,7 +92,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
       type = lib.types.anything;
       pluginDefault = "🐼 ";
       description = ''
-        Panda for parameter, NOTE: for the terminal not support emoji, might crash
+        Panda for parameter. Note: for the terminal not support emoji, might crash
 
         or, provide a table with 3 icons
       '';
@@ -106,10 +106,10 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
         ''
         ''
           Should the hint be inline(nvim 0.10 only)?  default false
-          - return true | 'inline' to show hint inline
-          - return 'eol' to show hint at the end of line
-          - return false to disable
-          - return 'right_align' to display hint right aligned in the current line
+          - Return true | 'inline' to show hint inline
+          - Return 'eol' to show hint at the end of line
+          - Return false to disable
+          - Return 'right_align' to display hint right aligned in the current line
         '';
 
     hi_parameter = defaultNullOpts.mkStr "LspSignatureActiveParameter" ''
@@ -122,15 +122,15 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
           border = "rounded";
         }
         ''
-          `border` can be double, rounded, single, shadow, none or lua table of borders
+          `border` can be double, rounded, single, shadow, none or a lua table of borders
         '';
 
     always_trigger = defaultNullOpts.mkBool false ''
-      sometime show signature on new line or in middle of parameter can be confusing
+      Sometime show signature on new line or in middle of parameter can be confusing
     '';
 
     auto_close_after = defaultNullOpts.mkLua "nil" ''
-      autoclose signature float win after x seconds, disabled if`nil`
+      Autoclose signature float win after x seconds, disabled if`nil`
     '';
 
     extra_trigger_chars = defaultNullOpts.mkListOf lib.types.str [ ] ''
@@ -138,15 +138,15 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     zindex = defaultNullOpts.mkInt 200 ''
-      by default it will be on top of all floating windows, set to <= 50 to send it to bottom
+      By default it will be on top of all floating windows, set to <= 50 to send it to the bottom
     '';
 
     padding = defaultNullOpts.mkStr "" ''
-      character to pad on left and right of signature
+      Character to pad on left and right of signature
     '';
 
     transparency = defaultNullOpts.mkStrLuaOr (lib.types.ints.between 1 100) "nil" ''
-      disabled by default, allow floating win transparent value 1~100
+      Disabled by default, allow floating window transparent value 1~100
     '';
 
     shadow_blend = defaultNullOpts.mkInt 36 ''
@@ -154,15 +154,15 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     shadow_guibg = defaultNullOpts.mkStr "Green" ''
-      if you're using shadow as border, use this to set the color
+      If you're using shadow as border, use this to set the color
     '';
 
     time_interval = defaultNullOpts.mkInt 200 ''
-      timer check interval. Set to a lower value if you want to reduce latency
+      Timer check interval. Set to a lower value if you want to reduce latency
     '';
 
     toggle_key = defaultNullOpts.mkLua "nil" ''
-      toggle signature on and off in insert mode
+      Toggle signature on and off in insert mode
     '';
 
     toggle_flip_floatwin_setting = defaultNullOpts.mkStrLuaOr lib.types.bool false ''
@@ -170,7 +170,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
       - floating_windows: true|false setting after toggle key pressed
       - false: floating_windows setup will not change, toggle_key will pop up signature helper, but signature
 
-      may not popup when typing depends on floating_window setting
+      May not popup when typing, depending on floating_window setting
     '';
 
     select_signature_key = defaultNullOpts.mkLua "nil" ''
