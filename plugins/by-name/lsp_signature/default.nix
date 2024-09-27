@@ -16,10 +16,12 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     log_path =
-      defaultNullOpts.mkStrLuaOr lib.types.path # lua
-        ''
-          vim.fn.stdpath("cache") .. "/lsp_signature.log"
-        ''
+      defaultNullOpts.mkStr
+        (lib.nixvim.mkRaw # lua
+          ''
+            vim.fn.stdpath("cache") .. "/lsp_signature.log"
+          ''
+        )
         ''
           Log directory for when debug is on. Default is  ~/.cache/nvim/lsp_signature.log
 

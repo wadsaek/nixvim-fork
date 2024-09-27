@@ -9,7 +9,7 @@
 
       settings = {
         debug = true;
-        log_path = /home/wadsaek/.config/lsp_signature.log;
+        log_path = "~/.config/TestDirectory/lsp_signature.log";
         verbose = true;
         bind = true;
         doc_lines = 5;
