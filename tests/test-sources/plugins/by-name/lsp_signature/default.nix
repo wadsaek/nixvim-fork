@@ -11,7 +11,7 @@
         debug = true;
         log_path = /home/wadsaek/.config/lsp_signature.log;
         verbose = true;
-        bind  = true;
+        bind = true;
         doc_lines = 5;
 
         max_height = 10;
@@ -23,7 +23,7 @@
         fix_pos = true;
         hint_inline = "function() return 'inline' end";
         handler_opts.border = "shadow";
-        extra_trigger_chars = ["$"];
+        extra_trigger_chars = [ "$" ];
 
         shadow_blend = 1;
         select_signature_key = "<C-c>";
