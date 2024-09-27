@@ -92,7 +92,7 @@ helpers.neovim-plugin.mkNeovimPlugin {
     update_in_insert = false;
   };
 
-  settingsOptions = import ./settings.nix { inherit helpers; };
+  settingsOptions = import ./settings.nix lib;
 
   extraOptions = {
     enableLspFormat = mkOption {
@@ -147,7 +147,7 @@ helpers.neovim-plugin.mkNeovimPlugin {
       ];
 
       # We only do this here because of enableLspFormat
-      extraConfigLua = ''
+      plugins.none-ls.luaConfig.content = ''
         require("null-ls").setup(${helpers.toLuaObject setupOptions})
       '';
     };

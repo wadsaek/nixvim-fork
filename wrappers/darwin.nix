@@ -16,34 +16,31 @@ let
     types
     ;
   cfg = config.programs.nixvim;
+  nixvimConfig = config.lib.nixvim.modules.evalNixvim {
+    extraSpecialArgs = {
+      darwinConfig = config;
+    };
+    modules = [
+      ./modules/darwin.nix
+    ];
+  };
 in
 {
+  _file = ./darwin.nix;
+
   options = {
     programs.nixvim = mkOption {
+      inherit (nixvimConfig) type;
       default = { };
-      type = types.submoduleWith {
-        shorthandOnlyDefinesConfig = true;
-        specialArgs = config.lib.nixvim.modules.specialArgsWith {
-          defaultPkgs = pkgs;
-          darwinConfig = config;
-        };
-        modules = [
-          ./modules/darwin.nix
-          ../modules/top-level
-        ];
-      };
     };
   };
 
   imports = [ (import ./_shared.nix { }) ];
 
-  config = mkIf cfg.enable (mkMerge [
-    {
-      environment.systemPackages = [
-        cfg.finalPackage
-        cfg.printInitPackage
-      ] ++ (lib.optional cfg.enableMan self.packages.${pkgs.stdenv.hostPlatform.system}.man-docs);
-    }
-    { inherit (cfg) warnings assertions; }
-  ]);
+  config = mkIf cfg.enable {
+    environment.systemPackages = [
+      cfg.build.package
+      cfg.build.printInitPackage
+    ] ++ lib.optional cfg.enableMan self.packages.${pkgs.stdenv.hostPlatform.system}.man-docs;
+  };
 }

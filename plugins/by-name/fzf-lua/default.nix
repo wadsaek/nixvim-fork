@@ -1,4 +1,5 @@
 {
+  config,
   lib,
   helpers,
   options,
@@ -49,11 +50,6 @@ helpers.neovim-plugin.mkNeovimPlugin {
       description = "Toggle icon support. Installs nvim-web-devicons.";
       visible = false;
     };
-
-    iconsPackage = lib.mkPackageOption pkgs [
-      "vimPlugins"
-      "nvim-web-devicons"
-    ] { nullable = true; };
 
     profile = helpers.defaultNullOpts.mkEnumFirstDefault [
       "default"
@@ -112,17 +108,26 @@ helpers.neovim-plugin.mkNeovimPlugin {
     in
     {
       # TODO: deprecated 2024-08-29 remove after 24.11
-      warnings = lib.mkIf opt.iconsEnabled.isDefined [
+      warnings = lib.optionals opt.iconsEnabled.isDefined [
         ''
-          nixvim (plugins.fzf-lua):
-          The option definition `plugins.fzf-lua.iconsEnabled' in ${showFiles opt.iconsEnabled.files} has been deprecated; please remove it.
-          You should use `plugins.fzf-lua.iconsPackage' instead.
+          The option definition `plugins.fzf-lua.iconsEnabled' in ${lib.showFiles opt.iconsEnabled.files} has been deprecated; please remove it.
         ''
       ];
-
-      extraPlugins = lib.mkIf (
-        cfg.iconsPackage != null && (opt.iconsEnabled.isDefined -> cfg.iconsEnabled)
-      ) [ cfg.iconsPackage ];
+      # TODO: added 2024-09-20 remove after 24.11
+      plugins.web-devicons =
+        lib.mkIf
+          (
+            opt.iconsEnabled.isDefined
+            && cfg.iconsEnabled
+            && !(
+              config.plugins.mini.enable
+              && config.plugins.mini.modules ? icons
+              && config.plugins.mini.mockDevIcons
+            )
+          )
+          {
+            enable = lib.mkOverride 1490 true;
+          };
 
       extraPackages = [ cfg.fzfPackage ];
 

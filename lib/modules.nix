@@ -2,50 +2,42 @@
   lib,
   self,
 }:
-rec {
-  # Build specialArgs for evaluating nixvim modules
-  specialArgsWith =
-    # TODO: switch defaultPkgs -> pkgsPath (i.e. pkgs.path or inputs.nixvim)
-    # FIXME: Ideally, we should not require callers to pass in _anything_ specific
-    { defaultPkgs, ... }@extraSpecialArgs:
-    {
-      inherit lib defaultPkgs;
-      # TODO: deprecate `helpers`
-      helpers = self;
-    }
-    // extraSpecialArgs;
-
+let
+  removed = {
+    # Removed 2024-09-24
+    getAssertionMessages = "";
+    # Removed 2024-09-27
+    specialArgs = "It has been integrated into `evalNixvim`";
+    specialArgsWith = "It has been integrated into `evalNixvim`";
+  };
+in
+{
   # Evaluate nixvim modules, checking warnings and assertions
   evalNixvim =
     {
       modules ? [ ],
       extraSpecialArgs ? { },
-      # Set to false to disable warnings and assertions
-      # Intended to aid accessing config.test.derivation
-      # WARNING: This argument may be removed without notice:
-      check ? true,
-    }:
-    let
-      result = lib.evalModules {
-        modules = [ ../modules/top-level ] ++ modules;
-        specialArgs = specialArgsWith extraSpecialArgs;
-      };
-
-      failedAssertions = getAssertionMessages result.config.assertions;
-
-      checked =
-        if failedAssertions != [ ] then
-          throw "\nFailed assertions:\n${lib.concatStringsSep "\n" (map (x: "- ${x}") failedAssertions)}"
-        else
-          lib.showWarnings result.config.warnings result;
-    in
-    if check then checked else result;
-
-  # Return the messages for all assertions that failed
-  getAssertionMessages =
-    assertions:
-    lib.pipe assertions [
-      (lib.filter (x: !x.assertion))
-      (lib.map (x: x.message))
-    ];
+      check ? null, # TODO: Remove stub
+    }@args:
+    # TODO: `check` argument removed 2024-09-24
+    # NOTE: this argument was always marked as experimental
+    assert lib.assertMsg (!args ? "check")
+      "`evalNixvim`: passing `check` is no longer supported. Checks are now done when evaluating `config.build.package` and can be avoided by using `config.build.packageUnchecked` instead.";
+    # Ensure a suitable `lib` is used
+    # TODO: offer a lib overlay that end-users could use to apply nixvim's extensions to their own `lib`
+    assert lib.assertMsg (extraSpecialArgs ? lib -> extraSpecialArgs.lib ? nixvim) ''
+      Nixvim requires a lib that includes some custom extensions, however the `lib` from `specialArgs` does not have a `nixvim` attr.
+      Remove `lib` from nixvim's `specialArgs` or ensure you apply nixvim's extensions to your `lib`.'';
+    lib.evalModules {
+      modules = [ ../modules/top-level ] ++ modules;
+      specialArgs = {
+        inherit lib;
+        # TODO: deprecate `helpers`
+        helpers = self;
+      } // extraSpecialArgs;
+    };
 }
+// lib.mapAttrs (
+  name: msg:
+  throw ("`modules.${name}` has been removed." + lib.optionalString (msg != "") (" " + msg))
+) removed

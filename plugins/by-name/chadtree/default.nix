@@ -3,6 +3,7 @@
   helpers,
   config,
   pkgs,
+  options,
   ...
 }:
 with lib;
@@ -20,11 +21,6 @@ in
         "chadtree"
       ];
     };
-
-    iconsPackage = lib.mkPackageOption pkgs [
-      "vimPlugins"
-      "nvim-web-devicons"
-    ] { nullable = true; };
 
     options = {
       follow = helpers.defaultNullOpts.mkBool true ''
@@ -415,7 +411,7 @@ in
     let
       setupOptions = with cfg; {
         xdg = true;
-        options = with options; {
+        options = with cfg.options; {
           inherit follow;
           inherit lang;
           mimetypes = with mimetypes; {
@@ -502,11 +498,22 @@ in
       };
     in
     mkIf cfg.enable {
-      extraPlugins =
-        [ cfg.package ]
-        ++ (optional (
-          cfg.iconsPackage != null && (cfg.theme == null || cfg.theme.iconGlyphSet == "devicons")
-        ) cfg.iconsPackage);
+      # TODO: added 2024-09-20 remove after 24.11
+      plugins.web-devicons =
+        lib.mkIf
+          (
+            (cfg.theme == null || cfg.theme.iconGlyphSet == "devicons")
+            && !(
+              config.plugins.mini.enable
+              && config.plugins.mini.modules ? icons
+              && config.plugins.mini.mockDevIcons
+            )
+          )
+          {
+            enable = lib.mkOverride 1490 false;
+          };
+
+      extraPlugins = [ cfg.package ];
 
       extraConfigLua = ''
         vim.api.nvim_set_var("chadtree_settings", ${helpers.toLuaObject setupOptions})

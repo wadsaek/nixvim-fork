@@ -7,7 +7,7 @@ let
   # We overlay a few tweaks into pkgs, for use in the docs
   pkgs = import ./pkgs.nix { inherit system nixpkgs; };
   inherit (pkgs) lib;
-  helpers = import ../lib { inherit lib pkgs; };
+  helpers = import ../lib { inherit lib; };
 
   nixvimPath = toString ./..;
 
@@ -33,16 +33,21 @@ let
       ) opt.declarations;
     };
 
-  evaledModules = lib.evalModules {
-    inherit (helpers.modules) specialArgs;
+  evaledModules = helpers.modules.evalNixvim {
     modules = [
-      ../modules/top-level
-      { isDocs = true; }
+      {
+        isDocs = true;
+        nixpkgs.pkgs = pkgs;
+      }
     ];
   };
 
-  hmOptions = builtins.removeAttrs (lib.evalModules { modules = [ ../wrappers/modules/hm.nix ]; })
-    .options [ "_module" ];
+  hmOptions = builtins.removeAttrs (lib.evalModules {
+    modules = [
+      ../wrappers/modules/hm.nix
+      { _module.check = false; } # Ignore missing option declarations
+    ];
+  }).options [ "_module" ];
 
   options-json =
     (pkgs.nixosOptionsDoc {

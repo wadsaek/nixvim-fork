@@ -3,6 +3,7 @@
   helpers,
   config,
   pkgs,
+  options,
   ...
 }:
 with lib;
@@ -92,11 +93,6 @@ in
           "diffview-nvim"
         ];
       };
-
-      iconsPackage = lib.mkPackageOption pkgs [
-        "vimPlugins"
-        "nvim-web-devicons"
-      ] { nullable = true; };
 
       diffBinaries = mkBool false ''
         Show diffs for binaries
@@ -827,9 +823,16 @@ in
       };
     in
     mkIf cfg.enable {
-      extraPlugins = [
-        cfg.package
-      ] ++ (optional (cfg.iconsPackage != null && cfg.useIcons) cfg.iconsPackage);
+      # TODO: added 2024-09-20 remove after 24.11
+      plugins.web-devicons = mkIf (
+        !(
+          config.plugins.mini.enable
+          && config.plugins.mini.modules ? icons
+          && config.plugins.mini.mockDevIcons
+        )
+      ) { enable = mkOverride 1490 true; };
+
+      extraPlugins = [ cfg.package ];
 
       extraConfigLua = ''
         require("diffview").setup(${helpers.toLuaObject setupOptions})

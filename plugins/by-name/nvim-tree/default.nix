@@ -3,12 +3,12 @@
   helpers,
   pkgs,
   config,
+  options,
   ...
 }:
 with lib;
 let
   cfg = config.plugins.nvim-tree;
-  inherit (helpers) ifNonNull';
 
   openWinConfigOption =
     helpers.defaultNullOpts.mkAttributeSet
@@ -45,11 +45,6 @@ in
         "nvim-tree-lua"
       ];
     };
-
-    iconsPackage = lib.mkPackageOption pkgs [
-      "vimPlugins"
-      "nvim-web-devicons"
-    ] { nullable = true; };
 
     gitPackage = lib.mkPackageOption pkgs "git" {
       nullable = true;
@@ -328,9 +323,7 @@ in
     };
 
     onAttach =
-      helpers.defaultNullOpts.mkNullable
-        (with types; either (enum [ "default" ]) helpers.nixvimTypes.rawLua)
-        "default"
+      helpers.defaultNullOpts.mkNullable (with types; either (enum [ "default" ]) rawLua) "default"
         ''
           Function ran when creating the nvim-tree buffer.
           This can be used to attach keybindings to the tree buffer.
@@ -392,7 +385,7 @@ in
                     '';
 
                     padding =
-                      helpers.defaultNullOpts.mkNullable (either ints.unsigned helpers.nixvimTypes.rawLua) "1"
+                      helpers.defaultNullOpts.mkNullable (either ints.unsigned rawLua) "1"
                         "Extra padding to the right.";
                   };
               })
@@ -508,7 +501,7 @@ in
             oneOf [
               str
               bool
-              helpers.nixvimTypes.rawLua
+              rawLua
             ]
           )
           # Default
@@ -929,7 +922,7 @@ in
 
   config =
     let
-      options =
+      setupOptions =
         with cfg;
         {
           disable_netrw = disableNetrw;
@@ -1168,9 +1161,18 @@ in
       '';
     in
     mkIf cfg.enable {
+      # TODO: added 2024-09-20 remove after 24.11
+      plugins.web-devicons = mkIf (
+        !(
+          config.plugins.mini.enable
+          && config.plugins.mini.modules ? icons
+          && config.plugins.mini.mockDevIcons
+        )
+      ) { enable = mkOverride 1490 true; };
+
       extraPlugins = [
         cfg.package
-      ] ++ lib.optional (cfg.iconsPackage != null) cfg.iconsPackage;
+      ];
 
       autoCmd =
         (optional autoOpenEnabled {
@@ -1187,7 +1189,7 @@ in
         (optionalString autoOpenEnabled openNvimTreeFunction)
         + ''
 
-          require('nvim-tree').setup(${helpers.toLuaObject options})
+          require('nvim-tree').setup(${helpers.toLuaObject setupOptions})
         '';
 
       extraPackages = [ cfg.gitPackage ];

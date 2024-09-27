@@ -15,22 +15,22 @@ let
     types
     ;
   cfg = config.programs.nixvim;
+  nixvimConfig = config.lib.nixvim.modules.evalNixvim {
+    extraSpecialArgs = {
+      hmConfig = config;
+    };
+    modules = [
+      ./modules/hm.nix
+    ];
+  };
 in
 {
+  _file = ./hm.nix;
+
   options = {
     programs.nixvim = mkOption {
+      inherit (nixvimConfig) type;
       default = { };
-      type = types.submoduleWith {
-        shorthandOnlyDefinesConfig = true;
-        specialArgs = config.lib.nixvim.modules.specialArgsWith {
-          defaultPkgs = pkgs;
-          hmConfig = config;
-        };
-        modules = [
-          ./modules/hm.nix
-          ../modules/top-level
-        ];
-      };
     };
   };
 
@@ -43,21 +43,18 @@ in
     })
   ];
 
-  config = mkIf cfg.enable (mkMerge [
-    {
-      home.packages = [
-        cfg.finalPackage
-        cfg.printInitPackage
-      ] ++ (lib.optional cfg.enableMan self.packages.${pkgs.stdenv.hostPlatform.system}.man-docs);
-    }
-    {
-      inherit (cfg) warnings assertions;
-      home.sessionVariables = mkIf cfg.defaultEditor { EDITOR = "nvim"; };
-    }
-    {
-      programs.bash.shellAliases = mkIf cfg.vimdiffAlias { vimdiff = "nvim -d"; };
-      programs.fish.shellAliases = mkIf cfg.vimdiffAlias { vimdiff = "nvim -d"; };
-      programs.zsh.shellAliases = mkIf cfg.vimdiffAlias { vimdiff = "nvim -d"; };
-    }
-  ]);
+  config = mkIf cfg.enable {
+    home.packages = [
+      cfg.build.package
+      cfg.build.printInitPackage
+    ] ++ lib.optional cfg.enableMan self.packages.${pkgs.stdenv.hostPlatform.system}.man-docs;
+
+    home.sessionVariables = mkIf cfg.defaultEditor { EDITOR = "nvim"; };
+
+    programs = mkIf cfg.vimdiffAlias {
+      bash.shellAliases.vimdiff = "nvim -d";
+      fish.shellAliases.vimdiff = "nvim -d";
+      zsh.shellAliases.vimdiff = "nvim -d";
+    };
+  };
 }

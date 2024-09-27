@@ -46,28 +46,94 @@ in
 
     wrapRc = mkOption {
       type = types.bool;
-      description = "Should the config be included in the wrapper script.";
-      default = false;
+      description = ''
+        Whether the config will be included in the wrapper script.
+
+        When enabled, the nixvim config will be passed to `nvim` using the `-u` option.
+      '';
+      defaultText = lib.literalMD ''
+        Configured by your installation method: `false` when using the home-manager module, `true` otherwise.
+      '';
     };
 
-    finalPackage = mkOption {
-      type = types.package;
-      description = "Wrapped Neovim.";
-      readOnly = true;
+    impureRtp = mkOption {
+      type = types.bool;
+      description = ''
+        Whether to keep the (impure) nvim config directory in the runtimepath.
+
+        If disabled, the XDG config dirs `nvim` and `nvim/after` will be removed from the runtimepath.
+      '';
+      defaultText = lib.literalMD ''
+        Configured by your installation method: `true` when using the home-manager module, `false` otherwise.
+      '';
     };
 
-    initPath = mkOption {
-      type = types.str;
-      description = "The path to the `init.lua` file.";
-      readOnly = true;
-      visible = false;
-    };
+    build = {
+      # TODO: `standalonePackage`; i.e. package + printInitPackage + man-docs bundled together
 
-    printInitPackage = mkOption {
-      type = types.package;
-      description = "A tool to show the content of the generated `init.lua` file.";
-      readOnly = true;
-      visible = false;
+      package = mkOption {
+        type = types.package;
+        description = ''
+          Wrapped Neovim.
+
+          > [!NOTE]
+          > Evaluating this option will also check `assertions` and print any `warnings`.
+          > If this is not desired, you can use `build.packageUnchecked` instead.
+        '';
+        readOnly = true;
+        defaultText = lib.literalExpression "config.build.packageUnchecked";
+        apply =
+          let
+            assertions = builtins.concatMap (x: lib.optional (!x.assertion) x.message) config.assertions;
+          in
+          if assertions != [ ] then
+            throw "\nFailed assertions:\n${lib.concatMapStringsSep "\n" (msg: "- ${msg}") assertions}"
+          else
+            lib.showWarnings config.warnings;
+      };
+
+      packageUnchecked = mkOption {
+        type = types.package;
+        description = ''
+          Wrapped Neovim (without checking warnings or assertions).
+        '';
+        readOnly = true;
+      };
+
+      initFile = mkOption {
+        type = types.path;
+        description = ''
+          The generated `init.lua` file.
+
+          > [!NOTE]
+          > If `performance.byteCompileLua` is enabled, this file may not contain human-readable lua source code.
+          > Consider using `build.initSource` instead.
+        '';
+        readOnly = true;
+        visible = false;
+      };
+
+      initSource = mkOption {
+        type = types.path;
+        description = ''
+          The generated `init.lua` source file.
+
+          This is usually identical to `build.initFile`, however if `performance.byteCompileLua` is enabled,
+          this option will refer to the un-compiled lua source file.
+        '';
+        readOnly = true;
+        visible = false;
+      };
+
+      printInitPackage = mkOption {
+        type = types.package;
+        description = ''
+          A tool to show the content of the generated `init.lua` file.
+          Run using `${config.build.printInitPackage.meta.mainProgram}`.
+        '';
+        readOnly = true;
+        visible = false;
+      };
     };
   };
 
@@ -190,7 +256,7 @@ in
       # Combined plugins
       combinedPlugins = [ pluginPack ] ++ standaloneStartPlugins ++ optPlugins;
 
-      # Plugins to use in finalPackage
+      # Plugins to use in build.package
       plugins = if config.performance.combinePlugins.enable then combinedPlugins else normalizedPlugins;
 
       neovimConfig = pkgs.neovimUtils.makeNeovimConfig (
@@ -224,23 +290,23 @@ in
         config.content
       ];
 
-      textInit = builders.writeLua "init.lua" customRC;
-      byteCompiledInit = builders.writeByteCompiledLua "init.lua" customRC;
-      init =
+      initSource = builders.writeLua "init.lua" customRC;
+      initByteCompiled = builders.writeByteCompiledLua "init.lua" customRC;
+      initFile =
         if
           config.type == "lua"
           && config.performance.byteCompileLua.enable
           && config.performance.byteCompileLua.initLua
         then
-          byteCompiledInit
+          initByteCompiled
         else
-          textInit;
+          initSource;
 
       extraWrapperArgs = builtins.concatStringsSep " " (
         (optional (
           config.extraPackages != [ ]
         ) ''--prefix PATH : "${lib.makeBinPath config.extraPackages}"'')
-        ++ (optional config.wrapRc ''--add-flags -u --add-flags "${init}"'')
+        ++ (optional config.wrapRc ''--add-flags -u --add-flags "${initFile}"'')
       );
 
       package =
@@ -273,33 +339,43 @@ in
       );
     in
     {
-      finalPackage = wrappedNeovim;
-      initPath = "${init}";
+      build = {
+        package = config.build.packageUnchecked;
+        packageUnchecked = wrappedNeovim;
+        inherit initFile initSource;
 
-      printInitPackage = pkgs.writeShellApplication {
-        name = "nixvim-print-init";
-        runtimeInputs = [ pkgs.bat ];
-        text = ''
-          bat --language=lua "${textInit}"
-        '';
+        printInitPackage = pkgs.writeShellApplication {
+          name = "nixvim-print-init";
+          runtimeInputs = [ pkgs.bat ];
+          runtimeEnv = {
+            init = config.build.initSource;
+          };
+          text = ''
+            bat --language=lua "$init"
+          '';
+        };
       };
 
-      extraConfigLuaPre = lib.mkOrder 100 (
-        # Add a global table at start of init
-        ''
-          -- Nixvim's internal module table
-          -- Can be used to share code throughout init.lua
-          local _M = {}
-        ''
-        + lib.optionalString config.wrapRc ''
+      # Set `wrapRc` and `impureRtp`s option defaults with even lower priority than `mkOptionDefault`
+      wrapRc = lib.mkOverride 1501 true;
+      impureRtp = lib.mkOverride 1501 false;
 
-          -- Ignore the user lua configuration
-          vim.opt.runtimepath:remove(vim.fn.stdpath('config'))              -- ~/.config/nvim
-          vim.opt.runtimepath:remove(vim.fn.stdpath('config') .. "/after")  -- ~/.config/nvim/after
-          vim.opt.runtimepath:remove(vim.fn.stdpath('data') .. "/site")     -- ~/.local/share/nvim/site
-        ''
+      extraConfigLuaPre = lib.mkOrder 100 (
+        lib.concatStringsSep "\n" (
+          lib.optional (!config.impureRtp) ''
+            -- Ignore the user lua configuration
+            vim.opt.runtimepath:remove(vim.fn.stdpath('config'))              -- ~/.config/nvim
+            vim.opt.runtimepath:remove(vim.fn.stdpath('config') .. "/after")  -- ~/.config/nvim/after
+          ''
+          # Add a global table at start of init
+          ++ lib.singleton ''
+            -- Nixvim's internal module table
+            -- Can be used to share code throughout init.lua
+            local _M = {}
+          ''
+        )
       );
 
-      extraPlugins = lib.mkIf config.wrapRc [ config.filesPlugin ];
+      extraPlugins = lib.mkIf config.wrapRc [ config.build.extraFiles ];
     };
 }

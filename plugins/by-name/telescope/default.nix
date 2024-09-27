@@ -2,6 +2,7 @@
   lib,
   config,
   pkgs,
+  options,
   ...
 }:
 with lib;
@@ -9,7 +10,6 @@ let
   inherit (lib.nixvim)
     keymaps
     mkNullOrOption
-    mkPackageOption
     toLuaObject
     ;
 in
@@ -89,11 +89,6 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
       '';
     };
 
-    iconsPackage = lib.mkPackageOption pkgs [
-      "vimPlugins"
-      "nvim-web-devicons"
-    ] { nullable = true; };
-
     batPackage = lib.mkPackageOption pkgs "bat" {
       nullable = true;
     };
@@ -101,7 +96,14 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
 
   callSetup = false;
   extraConfig = cfg: {
-    extraPlugins = mkIf (cfg.iconsPackage != null) [ cfg.iconsPackage ];
+    # TODO: added 2024-09-20 remove after 24.11
+    plugins.web-devicons = mkIf (
+      !(
+        config.plugins.mini.enable
+        && config.plugins.mini.modules ? icons
+        && config.plugins.mini.mockDevIcons
+      )
+    ) { enable = mkOverride 1490 true; };
 
     extraConfigVim = mkIf (cfg.highlightTheme != null) ''
       let $BAT_THEME = '${cfg.highlightTheme}'
@@ -122,7 +124,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
       }
     ) cfg.keymaps;
 
-    extraConfigLua = ''
+    plugins.telescope.luaConfig.content = ''
       require('telescope').setup(${toLuaObject cfg.settings})
 
       local __telescopeExtensions = ${toLuaObject cfg.enabledExtensions}

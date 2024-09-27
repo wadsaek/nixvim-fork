@@ -3,6 +3,7 @@
   helpers,
   config,
   pkgs,
+  options,
   ...
 }:
 with lib;
@@ -55,11 +56,6 @@ in
           "lspsaga-nvim"
         ];
       };
-
-      iconsPackage = lib.mkPackageOption pkgs [
-        "vimPlugins"
-        "nvim-web-devicons"
-      ] { nullable = true; };
 
       ui = {
         border = helpers.defaultNullOpts.mkBorder "single" "lspsaga" "";
@@ -461,18 +457,27 @@ in
   };
 
   config = mkIf cfg.enable {
-    extraPlugins =
-      [ cfg.package ]
-      ++ optional (
-        cfg.iconsPackage != null && (cfg.ui.devicon == null || cfg.ui.devicon)
-      ) cfg.iconsPackage;
-
-    warnings = mkIf (
+    # TODO: added 2024-09-20 remove after 24.11
+    plugins.web-devicons =
+      lib.mkIf
+        (
+          (cfg.ui.devicon == null || cfg.ui.devicon)
+          && !(
+            config.plugins.mini.enable
+            && config.plugins.mini.modules ? icons
+            && config.plugins.mini.mockDevIcons
+          )
+        )
+        {
+          enable = mkOverride 1490 true;
+        };
+    warnings = lib.optional (
       # https://nvimdev.github.io/lspsaga/implement/#default-options
       (isBool cfg.implement.enable && cfg.implement.enable)
       && (isBool cfg.symbolInWinbar.enable && !cfg.symbolInWinbar.enable)
-    ) [ "You have enabled the `implement` module but it requires `symbolInWinbar` to be enabled." ];
+    ) "You have enabled the `implement` module but it requires `symbolInWinbar` to be enabled.";
 
+    extraPlugins = [ cfg.package ];
     extraConfigLua =
       let
         setupOptions =

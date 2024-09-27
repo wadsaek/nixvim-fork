@@ -1,25 +1,26 @@
 {
-  helpers,
   pkgs,
   lib,
   ...
 }:
-with lib;
-helpers.vim-plugin.mkVimPlugin {
+let
+  inherit (lib.nixvim) defaultNullOpts;
+in
+lib.nixvim.vim-plugin.mkVimPlugin {
   name = "direnv";
   originalName = "direnv.vim";
   package = "direnv-vim";
   globalPrefix = "direnv_";
 
-  maintainers = [ helpers.maintainers.alisonjenkins ];
+  maintainers = [ lib.maintainers.alisonjenkins ];
 
   settingsOptions = {
-    direnv_auto = helpers.defaultNullOpts.mkFlagInt 1 ''
+    direnv_auto = defaultNullOpts.mkFlagInt 1 ''
       It will not execute `:DirenvExport` automatically if the value is `0`.
     '';
 
     direnv_edit_mode =
-      helpers.defaultNullOpts.mkEnum
+      defaultNullOpts.mkEnum
         [
           "edit"
           "split"
@@ -31,7 +32,7 @@ helpers.vim-plugin.mkVimPlugin {
           Select the command to open buffers to edit. Default: 'edit'.
         '';
 
-    direnv_silent_load = helpers.defaultNullOpts.mkFlagInt 1 ''
+    direnv_silent_load = defaultNullOpts.mkFlagInt 1 ''
       Stop echoing output from Direnv command.
     '';
   };

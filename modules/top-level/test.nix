@@ -9,7 +9,7 @@ let
   cfg = config.test;
 
   inherit (config) warnings;
-  assertions = lib.nixvim.modules.getAssertionMessages config.assertions;
+  assertions = builtins.concatMap (x: lib.optional (!x.assertion) x.message) config.assertions;
 in
 {
   options.test = {
@@ -36,9 +36,10 @@ in
       description = "Whether to check `config.assertions` in the test.";
       default = true;
     };
+  };
 
-    # Output
-    derivation = lib.mkOption {
+  options.build = {
+    test = lib.mkOption {
       type = lib.types.package;
       description = ''
         A derivation that tests the config by running neovim.
@@ -66,10 +67,10 @@ in
       ) "" toCheck;
     in
     {
-      test.derivation =
+      build.test =
         pkgs.runCommandNoCCLocal cfg.name
           {
-            nativeBuildInputs = [ config.finalPackage ];
+            nativeBuildInputs = [ config.build.packageUnchecked ];
 
             # Allow inspecting the test's module a little from the repl
             # e.g.

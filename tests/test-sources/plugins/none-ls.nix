@@ -115,19 +115,12 @@
           let
             disabled =
               [
-                # TODO: re-enable when package is fixed
-                "prisma_format"
                 # TODO: added 2024-09-13
                 # Swift broken everywhere atm
                 "swiftformat"
                 "swift_format"
                 "swiftlint"
               ]
-              ++ (lib.optionals (pkgs.stdenv.isDarwin && pkgs.stdenv.isx86_64) [
-                # As of 2024-03-27, pkgs.graalvm-ce (a dependency of pkgs.clj-kondo) is broken on x86_64-darwin
-                # TODO: re-enable this test when fixed
-                "clj_kondo"
-              ])
               ++ (lib.optionals pkgs.stdenv.isDarwin [
                 # As of 2024-05-22, python311Packages.k5test (one of ansible-lint's dependenvies) is broken on darwin
                 # TODO: re-enable this test when fixed

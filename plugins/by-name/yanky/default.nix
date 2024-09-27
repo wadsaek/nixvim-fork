@@ -216,7 +216,7 @@ helpers.neovim-plugin.mkNeovimPlugin {
         '';
 
         mappings = helpers.defaultNullOpts.mkAttrsOf' {
-          type = with helpers.nixvimTypes; either strLuaFn (attrsOf strLuaFn);
+          type = with lib.types; either strLuaFn (attrsOf strLuaFn);
           apply =
             mappings:
             helpers.ifNonNull' mappings (
@@ -373,7 +373,7 @@ helpers.neovim-plugin.mkNeovimPlugin {
       }
     ];
 
-    extraConfigLua = ''
+    plugins.yanky.luaConfig.content = ''
       do
         local utils = require('yanky.utils')
         ${optionalString config.plugins.telescope.enable "local mapping = require('yanky.telescope.mapping')"}

@@ -1,8 +1,5 @@
-{
-  helpers,
-  ...
-}:
-helpers.vim-plugin.mkVimPlugin {
+{ lib, ... }:
+lib.nixvim.vim-plugin.mkVimPlugin {
   name = "vim-css-color";
-  maintainers = [ helpers.maintainers.DanielLaing ];
+  maintainers = [ lib.maintainers.DanielLaing ];
 }

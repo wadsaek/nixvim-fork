@@ -10,12 +10,20 @@ let
   inherit (lib) types;
 
   fileModuleType = types.submoduleWith {
-    shorthandOnlyDefinesConfig = true;
     inherit specialArgs;
     # Don't include the modules in the docs, as that'd be redundant
     modules = lib.optionals (!config.isDocs) [
       ../../.
       ./submodule.nix
+      # Pass module args through to the submodule (except `name`)
+      # Wrap each arg with the correct priority
+      {
+        _module.args = lib.pipe options._module.args [
+          lib.modules.mergeAttrDefinitionsWithPrio
+          (lib.flip builtins.removeAttrs [ "name" ])
+          (lib.mapAttrs (_: { highestPrio, value }: lib.mkOverride highestPrio value))
+        ];
+      }
     ];
     description = "Nixvim configuration";
   };
@@ -37,7 +45,7 @@ in
       };
     };
 
-    filesPlugin = lib.mkOption {
+    build.extraFiles = lib.mkOption {
       type = types.package;
       description = "A derivation with all the files inside.";
       internal = true;
@@ -69,7 +77,7 @@ in
 
       # A directory with all the files in it
       # Implementation based on NixOS's /etc module
-      filesPlugin = pkgs.runCommandLocal "nvim-config" { } ''
+      build.extraFiles = pkgs.runCommandLocal "nvim-config" { } ''
         set -euo pipefail
 
         makeEntry() {
@@ -92,6 +100,6 @@ in
       '';
 
       # Never combine user files with the rest of the plugins
-      performance.combinePlugins.standalonePlugins = [ config.filesPlugin ];
+      performance.combinePlugins.standalonePlugins = [ config.build.extraFiles ];
     };
 }

@@ -30,7 +30,7 @@ let
           );
       };
     in
-    result.config.test.derivation;
+    result.config.build.test;
 
   # Create a nix derivation from a nixvim configuration.
   # The build phase simply consists in running neovim with the given configuration.
@@ -45,6 +45,7 @@ let
     }@args:
     let
       helpers = import ../lib {
+        # NOTE: must match the user-facing functions, so we still include the `pkgs` argument
         inherit pkgs lib;
         # TODO: deprecate helpers.enableExceptInTests,
         # add a context option e.g. `config.isTest`?
@@ -61,16 +62,14 @@ let
               { config.test.runNvim = !dontRun; }
           ))
           { wrapRc = true; }
+          # TODO: Only do this when `args?pkgs`
+          # Consider deprecating the `pkgs` arg too...
+          { nixpkgs.pkgs = lib.mkDefault pkgs; }
         ];
-        extraSpecialArgs = {
-          defaultPkgs = pkgs;
-        } // extraSpecialArgs;
-        # Don't check assertions/warnings while evaluating nixvim config
-        # We'll let the test derivation handle that
-        check = false;
+        inherit extraSpecialArgs;
       };
     in
-    result.config.test.derivation;
+    result.config.build.test;
 in
 # NOTE: this is exported publicly in the flake outputs as `lib.<system>.check`
 {

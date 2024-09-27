@@ -69,11 +69,6 @@ in
         visible = false;
       };
 
-      iconsPackage = lib.mkPackageOption pkgs [
-        "vimPlugins"
-        "nvim-web-devicons"
-      ] { nullable = true; };
-
       theme = mkOption {
         type = with types; nullOr (maybeRaw str);
         apply = v: if lib.isString v then lib.nixvim.mkRaw "require'alpha.themes.${v}'.config" else v;
@@ -156,20 +151,29 @@ in
       opt = options.plugins.alpha;
     in
     lib.mkIf cfg.enable {
-      # TODO: deprecated 2024-08-29 remove after 24.11
-      warnings = lib.mkIf opt.iconsEnabled.isDefined [
+
+      # TODO: added 2024-09-20 remove after 24.11
+      warnings = lib.optionals opt.iconsEnabled.isDefined [
         ''
-          nixvim (plugins.alpha):
           The option definition `plugins.alpha.iconsEnabled' in ${lib.showFiles opt.iconsEnabled.files} has been deprecated; please remove it.
-          You should use `plugins.alpha.iconsPackage' instead.
         ''
       ];
+      plugins.web-devicons =
+        lib.mkIf
+          (
+            opt.iconsEnabled.isDefined
+            && cfg.iconsEnabled
+            && !(
+              config.plugins.mini.enable
+              && config.plugins.mini.modules ? icons
+              && config.plugins.mini.mockDevIcons
+            )
+          )
+          {
+            enable = lib.mkOverride 1490 true;
+          };
 
-      extraPlugins =
-        [ cfg.package ]
-        ++ lib.optional (
-          cfg.iconsPackage != null && (opt.iconsEnabled.isDefined -> cfg.iconsEnabled)
-        ) cfg.iconsPackage;
+      extraPlugins = [ cfg.package ];
 
       assertions = [
         {

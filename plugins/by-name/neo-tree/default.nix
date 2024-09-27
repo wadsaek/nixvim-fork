@@ -3,6 +3,7 @@
   helpers,
   config,
   pkgs,
+  options,
   ...
 }:
 with lib;
@@ -61,11 +62,6 @@ in
           "neo-tree-nvim"
         ];
       };
-
-      iconsPackage = lib.mkPackageOption pkgs [
-        "vimPlugins"
-        "nvim-web-devicons"
-      ] { nullable = true; };
 
       gitPackage = lib.mkPackageOption pkgs "git" {
         nullable = true;
@@ -1130,9 +1126,18 @@ in
         // cfg.extraOptions;
     in
     mkIf cfg.enable {
+      # TODO: added 2024-09-20 remove after 24.11
+      plugins.web-devicons = mkIf (
+        !(
+          config.plugins.mini.enable
+          && config.plugins.mini.modules ? icons
+          && config.plugins.mini.mockDevIcons
+        )
+      ) { enable = mkOverride 1490 true; };
+
       extraPlugins = [
         cfg.package
-      ] ++ lib.optional (cfg.iconsPackage != null) cfg.iconsPackage;
+      ];
 
       extraConfigLua = ''
         require('neo-tree').setup(${helpers.toLuaObject setupOptions})

@@ -19,42 +19,20 @@ lib.fix (
     # since the final value will have been merged from two places
     builders = call ./builders.nix { };
 
-    # Merge in deprecated functions that require a nixpkgs instance
-    # Does shallow recursion, only one level deeper than normal
-    # Does nothing when `pkgs` is null
-    withOptionalFns =
-      if pkgs == null then
-        lib.id
-      else
-        lib.recursiveUpdateUntil
-          (
-            path: lhs: rhs:
-            builtins.length path > 1
-          )
-          {
-            # Minimal specialArgs required to evaluate nixvim modules
-            # FIXME: our minimal specialArgs should not need `pkgs`
-            modules.specialArgs = self.modules.specialArgsWith {
-              defaultPkgs = pkgs;
-            };
-
-            # We used to provide top-level access to the "builder" functions, with `pkgs` already baked in
-            # TODO: deprecated 2024-09-13; remove after 24.11
-            builders = lib.mapAttrs (
-              name:
-              lib.warn "`${name}` is deprecated. You should either use `${name}With` or access `${name}` via `builders.withPkgs`."
-            ) (builders.withPkgs pkgs);
-
-            inherit (self.builders)
-              writeLua
-              writeByteCompiledLua
-              byteCompileLuaFile
-              byteCompileLuaHook
-              byteCompileLuaDrv
-              ;
-          };
+    # We used to provide top-level access to the "builder" functions, with `pkgs` already baked in
+    # TODO: deprecated 2024-09-13; after 24.11 this can be simplified to always throw
+    deprecatedBuilders = lib.mapAttrs (
+      name: value:
+      let
+        notice = "`${name}` is deprecated";
+        opt = lib.optionalString (pkgs == null) " and not available in this instance of nixvim's lib";
+        advice = "You should either use `${name}With` or access `${name}` via `builders.withPkgs`";
+        msg = "${notice}${opt}. ${advice}.";
+      in
+      if pkgs == null then throw msg else lib.warn msg value
+    ) (builders.withPkgs pkgs);
   in
-  withOptionalFns {
+  {
     autocmd = call ./autocmd-helpers.nix { };
     deprecation = call ./deprecation.nix { };
     extendedLib = call ./extend-lib.nix { inherit lib; };
@@ -65,7 +43,16 @@ lib.fix (
     options = call ./options.nix { };
     utils = call ./utils.nix { inherit _nixvimTests; };
     vim-plugin = call ./vim-plugin.nix { };
-    inherit builders;
+
+    # Handle builders, which has some deprecated stuff that depends on `pkgs`
+    builders = builders // deprecatedBuilders;
+    inherit (self.builders)
+      writeLua
+      writeByteCompiledLua
+      byteCompileLuaFile
+      byteCompileLuaHook
+      byteCompileLuaDrv
+      ;
 
     # Top-level helper aliases:
     # TODO: deprecate some aliases
@@ -121,13 +108,18 @@ lib.fix (
       wrapVimscriptForLua
       ;
 
-    # TODO: Deprecate this `maintainers` alias
-    inherit (self.extendedLib) maintainers;
-
-    # TODO: Deprecate the old `nixvimTypes` alias?
-    nixvimTypes = self.extendedLib.types;
-
     toLuaObject = self.lua.toLua;
     mkLuaInline = self.lua.mkInline;
   }
+  //
+    # TODO: Removed 2024-09-27; remove after 24.11
+    lib.mapAttrs
+      (
+        old: new:
+        throw "The `${old}` alias has been removed. Use `${new}` on a lib with nixvim's extensions."
+      )
+      {
+        maintainers = "lib.maintainers";
+        nixvimTypes = "lib.types";
+      }
 )

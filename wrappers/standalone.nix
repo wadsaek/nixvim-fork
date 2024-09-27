@@ -1,5 +1,6 @@
 default_pkgs: self:
 {
+  # TODO: Deprecate this arg in favour of using module options
   pkgs ? default_pkgs,
   lib ? pkgs.lib,
   extraSpecialArgs ? { },
@@ -7,6 +8,7 @@ default_pkgs: self:
   module,
 }:
 let
+  # NOTE: user-facing so we must include the legacy `pkgs` argument
   helpers = import ../lib { inherit pkgs lib _nixvimTests; };
 
   inherit (helpers.modules) evalNixvim;
@@ -14,27 +16,29 @@ let
   mkNvim =
     mod:
     let
-      evaledModule = evalNixvim {
+      nixvimConfig = evalNixvim {
         modules = [
           mod
-          ./modules/standalone.nix
+          # TODO: only include this when `args?pkgs`:
+          {
+            _file = ./standalone.nix;
+            nixpkgs.pkgs = lib.mkDefault pkgs;
+          }
         ];
-        extraSpecialArgs = {
-          defaultPkgs = pkgs;
-        } // extraSpecialArgs;
+        inherit extraSpecialArgs;
       };
-      inherit (evaledModule.config) enableMan finalPackage printInitPackage;
+      inherit (nixvimConfig.config) enableMan build;
     in
     (pkgs.symlinkJoin {
       name = "nixvim";
       paths = [
-        finalPackage
-        printInitPackage
+        build.package
+        build.printInitPackage
       ] ++ pkgs.lib.optional enableMan self.packages.${pkgs.stdenv.hostPlatform.system}.man-docs;
       meta.mainProgram = "nvim";
     })
     // rec {
-      inherit (evaledModule) config options;
+      inherit (nixvimConfig) config options;
       extend =
         extension:
         mkNvim {

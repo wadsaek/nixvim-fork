@@ -1,4 +1,4 @@
-{ pkgs, ... }:
+{ lib, pkgs, ... }:
 {
   empty = {
     plugins.lsp.enable = true;
@@ -168,19 +168,12 @@
             ocamllsp.enable = true;
             ols.enable =
               # ols is not supported on aarch64-linux
-              (pkgs.stdenv.hostPlatform.system != "aarch64-linux")
-              # As of 2024-01-04, ols is broken on darwin
-              # TODO: re-enable this test when fixed
-              && !pkgs.stdenv.isDarwin;
-            # As of 2024-03-05, omnisharp-roslyn is broken on darwin
-            # TODO: re-enable this test when fixed
-            omnisharp.enable = !pkgs.stdenv.isDarwin;
+              pkgs.stdenv.hostPlatform.system != "aarch64-linux";
+            omnisharp.enable = true;
             openscad-lsp.enable = true;
             perlpls.enable = true;
             pest-ls.enable = true;
-            # TODO: As of 2024-08-19 is broken
-            # re-enable this test when fixed
-            # prismals.enable = true;
+            prismals.enable = true;
             prolog-ls.enable = true;
             purescriptls.enable = true;
             pylsp.enable = true;
@@ -203,8 +196,7 @@
             sqls.enable = true;
             svelte.enable = true;
             tailwindcss.enable = true;
-            # TODO: re-enable this test when fixed
-            # taplo.enable = true;
+            taplo.enable = true;
             templ.enable = true;
             terraformls.enable = true;
             texlab.enable = true;
@@ -222,4 +214,66 @@
           };
         };
       };
+
+  volar-tsls-integration =
+    { config, ... }:
+    {
+      plugins.lsp = {
+        enable = true;
+        servers = {
+          volar.enable = true;
+          ts-ls = {
+            enable = true;
+            filetypes = [ "typescript" ];
+          };
+        };
+      };
+
+      assertions = [
+        {
+          assertion = lib.any (x: x == "vue") config.plugins.lsp.servers.ts-ls.filetypes;
+          message = "Expected `vue` filetype configuration.";
+        }
+        {
+          assertion = lib.any (
+            x: x.name == "@vue/typescript-plugin"
+          ) config.plugins.lsp.servers.ts-ls.extraOptions.init_options.plugins;
+          message = "Expected `@vue/typescript-plugin` plugin.";
+        }
+        {
+          assertion = lib.any (x: x == "typescript") config.plugins.lsp.servers.ts-ls.filetypes;
+          message = "Expected `typescript` filetype configuration.";
+        }
+      ];
+    };
+
+  tsls-filetypes =
+    { config, ... }:
+    {
+      plugins.lsp = {
+        enable = true;
+        servers = {
+          ts-ls = {
+            enable = true;
+          };
+        };
+      };
+
+      assertions = [
+        {
+          assertion = lib.all (x: x != "vue") config.plugins.lsp.servers.ts-ls.filetypes;
+          message = "Did not expect `vue` filetype configuration.";
+        }
+        (lib.mkIf (config.plugins.lsp.servers.ts-ls.extraOptions ? init_options) {
+          assertion = lib.all (
+            x: x.name != "@vue/typescript-plugin"
+          ) config.plugins.lsp.servers.ts-ls.extraOptions.init_options.plugins;
+          message = "Did not expect `@vue/typescript-plugin` plugin.";
+        })
+        {
+          assertion = lib.any (x: x == "typescript") config.plugins.lsp.servers.ts-ls.filetypes;
+          message = "Expected `typescript` filetype configuration.";
+        }
+      ];
+    };
 }

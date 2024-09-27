@@ -131,7 +131,7 @@ nixvim.neovim-plugin.mkNeovimPlugin {
       plugins = mkOption {
         description = ''
           List of plugin specs provided to the `require('lz.n').load` function.
-          Plugin specs can be ${nixvim.nixvimTypes.rawLua.description}.
+          Plugin specs can be ${types.rawLua.description}.
         '';
         default = [ ];
         type = types.listOf lzPluginType;
@@ -190,7 +190,7 @@ nixvim.neovim-plugin.mkNeovimPlugin {
 
   extraConfig = cfg: {
     globals.lz_n = modules.mkAliasAndWrapDefsWithPriority id options.plugins.lz-n.settings;
-    extraConfigLua = mkIf (cfg.plugins != [ ]) ''
+    plugins.lz-n.luaConfig.content = mkIf (cfg.plugins != [ ]) ''
       require('lz.n').load( ${nixvim.toLuaObject cfg.plugins})
     '';
   };
