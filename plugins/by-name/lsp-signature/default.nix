@@ -6,6 +6,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
   name = "lsp-signature";
   originalName = "lsp_signature.nvim";
   package = "lsp_signature-nvim";
+  luaName = "lsp_signature";
 
   maintainers = [ lib.maintainers.wadsaek ];
 
