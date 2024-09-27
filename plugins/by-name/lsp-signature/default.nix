@@ -9,7 +9,6 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
 
   maintainers = [ lib.maintainers.wadsaek ];
 
-  # Optionally, explicitly declare some options. You don't have to.
   settingsOptions = {
     debug = defaultNullOpts.mkBool false ''
       Whether to enable debug logging
@@ -190,7 +189,6 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
   };
 
-  # Optionally, provide an example for the `settings` option.
   settingsExample = {
     hint_prefix = {
       above = "↙ ";
