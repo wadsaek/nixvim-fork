@@ -34,13 +34,13 @@
   defaults = {
     plugins.lsp-signature = {
       enable = true;
-      
+
       settings = {
         debug = false;
-        log_path = #lua 
-        ''
-          vim.fn.stdpath("cache") .. "/lsp_signature.log"
-        '';
+        log_path = # lua
+          ''
+            vim.fn.stdpath("cache") .. "/lsp_signature.log"
+          '';
         verbose = false;
         bind = true;
         doc_lines = 10;
@@ -56,14 +56,15 @@
         hint_enable = true;
         hint_prefix = "🐼 ";
         hint_scheme = "String";
-        hint_inline = /*lua*/ ''
-          function() return false end
-        '';
+        hint_inline = # lua
+          ''
+            function() return false end
+          '';
         hi_parameter = "LspSignatureActiveParameter";
         handler_opts.border = "rounded";
         always_trigger = false;
         auto_close_after = "nil";
-        extra_trigger_chars = [];
+        extra_trigger_chars = [ ];
         zindex = 200;
         padding = "";
         transparency = "nil";
@@ -74,7 +75,7 @@
         toggle_flip_floatwin_setting = false;
         select_signature_key = "nil";
         move_cursor_key = "nil";
-        keymaps = [];
+        keymaps = [ ];
       };
     };
   };
