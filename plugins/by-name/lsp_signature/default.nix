@@ -16,7 +16,7 @@ lib.nixvim.neovim-plugin.mkNeovimPlugin {
     '';
 
     log_path =
-      defaultNullOpts.mkLua # lua
+      defaultNullOpts.mkStrLuaOr lib.types.path # lua
         ''
           vim.fn.stdpath("cache") .. "/lsp_signature.log"
         ''
